@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -15,10 +16,26 @@ import (
 	"github.com/yuin/goldmark/text"
 )
 
-func GenerateHash(id string) string {
-	h := sha256.New()
-	h.Write([]byte(id))
-	return fmt.Sprintf("%x", h.Sum(nil))
+// Helper function generates a SHA256 hash from the passed byte slice.
+// This is used to create a unique identifier for the compiled prompt.
+func GenerateHash(data []byte) string {
+	hashed := sha256.Sum256(data)
+	return fmt.Sprintf("%x", hashed)
+}
+
+// Helper function generates a id based on the slug + file hash
+func IDFrom(slug, hash string) string {
+	return fmt.Sprintf("%s-%s", slug, hash[:6])
+}
+
+// Helper function generates a slug based on the spec's title
+func Slugify(title string) string {
+	slug := strings.ToLower(strings.TrimSpace(title))
+	slug = regexp.MustCompile(`[^\w\s-]`).ReplaceAllString(slug, "") // remove non-word characters
+	slug = strings.ReplaceAll(slug, " ", "-")                        // replace spaces with dashes
+	slug = regexp.MustCompile(`-+`).ReplaceAllString(slug, "-")      // collapse multiple dashes
+
+	return slug
 }
 
 func ParseSpecFile(path string) (*types.CompiledPrompt, error) {
@@ -61,19 +78,20 @@ func ParseSpecFile(path string) (*types.CompiledPrompt, error) {
 		return ast.WalkContinue, nil
 	})
 
-	// Assign values from blocks to scenario
-	scenario := &meta
-	scenario.ID = strings.ReplaceAll(strings.ToLower(scenario.Scenario), " ", "-")
-	scenario.Hash = GenerateHash(scenario.ID)
-	scenario.CreatedAt = time.Now()
-	scenario.UpdatedAt = time.Now()
-	scenario.SourcePath = path
+	// Assign values from blocks to compiledPrompt
+	compiledPrompt := &meta
+	compiledPrompt.Slug = Slugify(compiledPrompt.Title)
+	compiledPrompt.Hash = GenerateHash(content)
+	compiledPrompt.ID = IDFrom(compiledPrompt.Slug, compiledPrompt.Hash)
+	compiledPrompt.CreatedAt = time.Now()
+	compiledPrompt.UpdatedAt = time.Now()
+	compiledPrompt.SourcePath = path
 
 	// Parse the prompt
 	if val, ok := blocks["prompt"]; ok {
-		scenario.Prompt = val
+		compiledPrompt.Prompt = val
 	} else {
-		return nil, fmt.Errorf("No prompt found in spec file")
+		return nil, fmt.Errorf("no prompt found in spec file")
 	}
 
 	// Parse the inputs
@@ -83,13 +101,13 @@ func ParseSpecFile(path string) (*types.CompiledPrompt, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse inputs block: %w", err)
 		}
-		scenario.Inputs = vars
-		scenario.Values = defaults
+		compiledPrompt.Inputs = vars
+		compiledPrompt.Values = defaults
 	}
 
 	// Parse assertions
 	if val, ok := blocks["assertions"]; ok {
-		scenario.Assertions, err = ParseAssertionsBlock(val)
+		compiledPrompt.Assertions, err = ParseAssertionsBlock(val)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse assertions block: %w", err)
 		}
@@ -97,8 +115,8 @@ func ParseSpecFile(path string) (*types.CompiledPrompt, error) {
 
 	// Optional Snapshot
 	if val, ok := blocks["output"]; ok {
-		scenario.Snapshot = val
+		compiledPrompt.Snapshot = val
 	}
 
-	return scenario, nil
+	return compiledPrompt, nil
 }

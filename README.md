@@ -1,3 +1,5 @@
+![status](https://img.shields.io/badge/status-active--development-orange)
+
 # Specform (Go SDK + CLI)
 
 **`specform`** is a prompt specification framework that supports prompt compilation, rendering, assertions, and snapshot testing.
@@ -6,6 +8,8 @@ This package includes both:
 
 - A Go SDK (`pkg/specform`) for embedding prompt logic in Go programs
 - A CLI (`specform`) for working with prompt specs on the command line
+
+> **Heads up**: If you previously relied on the `Scenario` field or flat compiled output, you'll need to update to use the new `Title`/`Slug`/`ID` structure.
 
 ---
 
