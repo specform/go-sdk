@@ -26,12 +26,12 @@ func CompileSpecFiles(files []string, outputDir string, opts CompileOptions) ([]
 	var results []CompileResult
 
 	for _, file := range files {
-		scenario, err := internal.ParseSpecFile(file)
+		compiledPrompt, err := internal.ParseSpecFile(file)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse file %s: %w", file, err)
 		}
 
-		raw, err := json.MarshalIndent(scenario, "", "  ")
+		raw, err := json.MarshalIndent(compiledPrompt, "", "  ")
 		if err != nil {
 			return nil, fmt.Errorf("failed to encode JSON for %s: %w", file, err)
 		}

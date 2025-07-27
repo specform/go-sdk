@@ -9,9 +9,11 @@ type Assertion struct {
 
 type CompiledPrompt struct {
 	ID          string            `json:"id"`
+	Slug        string            `json:"slug,omitempty"` // optional slug for URL-friendly identifier
 	Hash        string            `json:"hash"`
-	Feature     string            `json:"feature,omitempty"`
-	Scenario    string            `json:"scenario"`
+	Version     string            `json:"version,omitempty"`
+	Title       string            `json:"title"`
+	Description string            `json:"description,omitempty"`
 	Prompt      string            `json:"compiledPrompt"`
 	Inputs      []string          `json:"inputs"`
 	Values      map[string]string `json:"defaultInputs"`

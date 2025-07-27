@@ -33,8 +33,8 @@ func ParseInputBlock(content string) ([]string, map[string]string, error) {
 			// Process content after opening quotes, if any
 			if len(parts) > 1 {
 				contentPart := strings.TrimSpace(parts[1])
-				if strings.HasPrefix(contentPart, "\"\"\"") {
-					contentAfterQuotes := strings.TrimPrefix(contentPart, "\"\"\"")
+				if after, ok := strings.CutPrefix(contentPart, "\"\"\""); ok {
+					contentAfterQuotes := after
 
 					// Handle single-line triple-quoted string
 					if strings.HasSuffix(contentAfterQuotes, "\"\"\"") {
